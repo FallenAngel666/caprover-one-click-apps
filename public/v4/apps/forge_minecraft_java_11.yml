@@ -1,7 +1,7 @@
 captainVersion: 4
 services:
     $$cap_appname:
-        image: itzg/minecraft-server:java19
+        image: itzg/minecraft-server:java11
         environment:
             EULA: 'true'
             TYPE: 'FORGE'
@@ -42,11 +42,11 @@ caproverOneClickApp:
           defaultValue: mc
         - id: $$cap_minecraft_version
           label: Minecraft version
-          defaultValue: 1.19.3
+          defaultValue: 1.16.5
         - id: $$cap_forge_version
           label: forge server version
           description: 'choose the version that works with your mc version , see: https://files.minecraftforge.net/'
-          defaultValue: 44.1.16
+          defaultValue: 36.2.34
         - id: $$cap_mc_port
           label: Service port
           defaultValue: 25575
@@ -83,8 +83,8 @@ caproverOneClickApp:
           defaultValue: 20
           validRegex: /.{1,}/
     instructions:
-        start: Minecraft server with dynamic version, server types, and modpack support, this oneclickapp in the Forge version of itzg's Minecraft server.
-        end: minecraft is deployed and available as srv-captain--$$cap_appname. Note that the application may take up to ten minutes to become available.
+        start: Minecraft server version 1.16 with Java 11, server types, and modpack support. This is oneclickapp in the Forge version of itzg's Minecraft server.
+        end: Minecraft is deployed and available as srv-captain--$$cap_appname. Note that the application may take up to ten minutes to become available.
     displayName: Minecraft forge server
     isOfficial: false
     description: Minecraft server with dynamic version, server types, and modpack support, this oneclickapp in the Forge version of itzg's Minecraft server.
