@@ -94,7 +94,7 @@ caproverOneClickApp:
           defaultValue: 20
           validRegex: /.{1,}/
     instructions:
-        start: Minecraft server with Java 11, server types, and modpack support. This is oneclickapp in the Forge version of itzg's Minecraft server.
+        start: Minecraft server with dynamic server types and modpack support. This is oneclickapp in the Forge version of itzg's Minecraft server.
         end: Minecraft is deployed and available as srv-captain--$$cap_appname. Note that the application may take up to ten minutes to become available.
     displayName: Dynamic Minecraft itzg server
     isOfficial: false
