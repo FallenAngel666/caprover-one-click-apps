@@ -1,43 +1,42 @@
 captainVersion: 4
 services:
-  $$cap_appname_config:
-    image: alpine:3.20
-    restart: unless-stopped
-    environment:
-      CONDUIT_SERVER_NAME: '$$cap_conduit_server_name'
-      CONDUIT_ALLOW_REGISTRATION: '$$cap_conduit_allow_registration'
-      CONDUIT_ALLOW_FEDERATION: '$$cap_conduit_allow_federation'
-      CONDUIT_MAX_REQUEST_SIZE: '$$cap_conduit_max_request_size'
-      CONDUIT_MAX_CONCURRENT_REQUESTS: '$$cap_conduit_max_concurrent_requests'
-    command:
-      - /bin/sh
-      - -lc
-      - |
-        cat > /conduit-config/conduit.toml <<EOF
-        server_name = "${CONDUIT_SERVER_NAME}"
-        database_backend = "rocksdb"
-        database_path = "/var/lib/matrix-conduit"
-        allow_registration = ${CONDUIT_ALLOW_REGISTRATION}
-        allow_federation = ${CONDUIT_ALLOW_FEDERATION}
-        max_request_size = ${CONDUIT_MAX_REQUEST_SIZE}
-        trusted_servers = ["matrix.org"]
-        max_concurrent_requests = ${CONDUIT_MAX_CONCURRENT_REQUESTS}
-        port = 6167
-        log = "info,rocket=off,_=off,sled=off"
-        EOF
-        chmod 644 /conduit-config/conduit.toml
-        tail -f /dev/null
-    volumes:
-      - '$$cap_appname-config:/conduit-config'
-
   $$cap_appname:
     image: matrixconduit/matrix-conduit:$$cap_conduit_version
     restart: unless-stopped
     environment:
-      CONDUIT_CONFIG: '/etc/conduit/conduit.toml'
+      # Required
+      CONDUIT_CONFIG: 'ignored.toml'
+      CONDUIT_SERVER_NAME: '$$cap_conduit_server_name'
+      CONDUIT_DATABASE_BACKEND: '$$cap_conduit_database_backend'
+      CONDUIT_DATABASE_PATH: '$$cap_conduit_database_path'
+      CONDUIT_WELL_KNOWN_SERVER: '$$cap_conduit_well_known_server'
+      CONDUIT_WELL_KNOWN_CLIENT: '$$cap_conduit_well_known_client'
+      CONDUIT_TRUSTED_SERVERS: '$$cap_conduit_trusted_servers'
+
+      # Network
+      CONDUIT_ADDRESS: '$$cap_conduit_address'
+      CONDUIT_PORT: '$$cap_conduit_port'
+
+      # Core
+      CONDUIT_ALLOW_REGISTRATION: '$$cap_conduit_allow_registration'
+      CONDUIT_ALLOW_ENCRYPTION: '$$cap_conduit_allow_encryption'
+      CONDUIT_ALLOW_FEDERATION: '$$cap_conduit_allow_federation'
+      CONDUIT_ALLOW_ROOM_CREATION: '$$cap_conduit_allow_room_creation'
+
+      # Performance / limits
+      CONDUIT_DB_CACHE_CAPACITY_MB: '$$cap_conduit_db_cache_capacity_mb'
+      CONDUIT_CONDUIT_CACHE_CAPACITY_MODIFIER: '$$cap_conduit_cache_capacity_modifier'
+      CONDUIT_ROCKSDB_MAX_OPEN_FILES: '$$cap_conduit_rocksdb_max_open_files'
+      CONDUIT_PDU_CACHE_CAPACITY: '$$cap_conduit_pdu_cache_capacity'
+      CONDUIT_CLEANUP_SECOND_INTERVAL: '$$cap_conduit_cleanup_second_interval'
+      CONDUIT_MAX_REQUEST_SIZE: '$$cap_conduit_max_request_size'
+      CONDUIT_MAX_CONCURRENT_REQUESTS: '$$cap_conduit_max_concurrent_requests'
+      CONDUIT_MAX_FETCH_PREV_EVENTS: '$$cap_conduit_max_fetch_prev_events'
+
+      # Misc
+      CONDUIT_LOG: '$$cap_conduit_log'
     volumes:
       - '$$cap_appname-data:/var/lib/matrix-conduit'
-      - '$$cap_appname-config:/etc/conduit'
     caproverExtra:
       containerHttpPort: '6167'
 
@@ -49,8 +48,8 @@ caproverOneClickApp:
       description: Check out their Docker page for the valid tags https://hub.docker.com/r/matrixconduit/matrix-conduit/tags
       validRegex: '/^v[0-9]{1,}|latest$/'
     - id: '$$cap_conduit_server_name'
-      label: 'Conduit server name'
-      defaultValue: 'example.com'
+      label: Server name
+      defaultValue: 'matrix.example.com'
       description: >-
         The domain part for your usernames (e.g. @myusername:example.com).
         
@@ -58,6 +57,24 @@ caproverOneClickApp:
         to point to your actual domain (which will probably be something like appname.apps.your-caprover-domain.com).
         
         You might find the Synapse documentation useful for this: https://matrix-org.github.io/synapse/latest/setup/installation.html#client-well-known-uri
+    - id: '$$cap_conduit_well_known_client'
+      label: Well-known client URL
+      defaultValue: 'https://<YOUR_SERVER_DOMAIN>'
+    - id: '$$cap_conduit_well_known_server'
+      label: Well-known server
+      defaultValue: '<YOUR_SERVER_DOMAIN>:443'
+    - id: '$$cap_conduit_database_backend'
+      label: Database backend
+      defaultValue: 'rocksdb'
+    - id: '$$cap_conduit_database_path'
+      label: Database path
+      defaultValue: '/var/lib/matrix-conduit'
+    - id: '$$cap_conduit_address'
+      label: Bind address
+      defaultValue: '0.0.0.0'
+    - id: '$$cap_conduit_port'
+      label: Bind port
+      defaultValue: '6167'
     - id: '$$cap_conduit_allow_registration'
       label: Enable public registration
       defaultValue: 'false'
@@ -74,17 +91,47 @@ caproverOneClickApp:
       description: >-
         Set this to false if you don't want your users to talk to users on other Matrix servers.
       validRegex: '/^(true|false)$/i'
+    - id: '$$cap_conduit_allow_encryption'
+      label: Allow encryption
+      defaultValue: 'true'
+    - id: '$$cap_conduit_allow_room_creation'
+      label: Allow room creation
+      defaultValue: 'true'
     - id: '$$cap_conduit_max_request_size'
       label: Max request size
       defaultValue: '20000000'
       description: >-
         The maximum allowed size for incoming requests, in bytes.
         
-        If you set this higher than 500000000, you will will also need to increase the nginx "client_max_body_size".
+        If you set this higher than 500000000, you will will also need to increase the nginx 'client_max_body_size'.
       validRegex: '/^[0-9]{2,}$/'
     - id: '$$cap_conduit_max_concurrent_requests'
-      label: Maximum number of concurrent requests
+      label: Max concurrent requests
       defaultValue: '100'
+    - id: '$$cap_conduit_max_fetch_prev_events'
+      label: Max fetch prev events
+      defaultValue: '100'
+    - id: '$$cap_conduit_trusted_servers'
+      label: Trusted servers JSON
+      defaultValue: '[matrix.org]'
+    - id: '$$cap_conduit_log'
+      label: Log filter
+      defaultValue: 'info,rocket=off,_=off,sled=off'
+    - id: '$$cap_conduit_db_cache_capacity_mb'
+      label: DB cache MB
+      defaultValue: '300'
+    - id: '$$cap_conduit_cache_capacity_modifier'
+      label: Cache capacity modifier
+      defaultValue: '1.0'
+    - id: '$$cap_conduit_rocksdb_max_open_files'
+      label: RocksDB max open files
+      defaultValue: '1000'
+    - id: '$$cap_conduit_pdu_cache_capacity'
+      label: PDU cache capacity
+      defaultValue: '150000'
+    - id: '$$cap_conduit_cleanup_second_interval'
+      label: Cleanup interval seconds
+      defaultValue: '60'
   instructions:
     start: >-
       Conduit is a simple, fast and reliable chat server powered by the Matrix protocol
